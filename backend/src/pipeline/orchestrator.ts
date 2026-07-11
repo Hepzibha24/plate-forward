@@ -3,9 +3,11 @@ import { adminDb } from "../services/firebaseAdmin.js";
 import { logStage } from "../services/logger.js";
 import { findSubType } from "../config/categories.js";
 import { Incident } from "../types/incident.js";
-import { AlertmanagerAlert, AlertSourceType } from "./ingestion/types.js";
+import { Evidence } from "../types/evidence.js";
+import { Alert, AlertmanagerAlert, AlertSourceType } from "./ingestion/types.js";
 import { normalizeAlertmanagerAlert } from "./ingestion/normalizeAlertmanager.js";
 import { classifyAlert } from "./categorization/classify.js";
+import { collectEvidence } from "./evidence/collectEvidence.js";
 
 function newIncidentId(): string {
   return `INC-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 4).toUpperCase()}`;
@@ -49,5 +51,39 @@ export async function ingestAlert(raw: AlertmanagerAlert, source: AlertSourceTyp
     classificationMethod: incident.classification.method,
   });
 
+  await gatherAndPersistEvidence(incident, alert);
+
   return incident;
+}
+
+async function gatherAndPersistEvidence(incident: Incident, alert: Alert) {
+  try {
+    const collected = await collectEvidence(alert, incident.category);
+
+    const evidenceDocs: Evidence[] = [
+      {
+        id: randomUUID(),
+        incidentId: incident.id,
+        source: "prometheus",
+        query: collected.metrics.map((m) => m.query).join("; "),
+        timeWindow: collected.timeWindow,
+        result: { metrics: collected.metrics },
+        collectedAt: Date.now(),
+      },
+      {
+        id: randomUUID(),
+        incidentId: incident.id,
+        source: "grafana",
+        query: `annotations + panels for service="${alert.service}"`,
+        timeWindow: collected.timeWindow,
+        result: { annotations: collected.annotations, panels: collected.panels },
+        collectedAt: Date.now(),
+      },
+    ];
+
+    await Promise.all(evidenceDocs.map((doc) => adminDb.collection("evidence").doc(doc.id).set(doc)));
+    logStage("evidence", "evidence persisted", { incidentId: incident.id, count: evidenceDocs.length });
+  } catch (err) {
+    console.error("[evidence] collection failed, incident will show no evidence", { incidentId: incident.id, err });
+  }
 }
