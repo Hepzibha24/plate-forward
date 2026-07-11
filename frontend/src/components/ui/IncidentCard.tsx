@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { CATEGORY_LABELS, Incident } from "@/types/incident";
+import { CATEGORY_LABELS, formatSubType, Incident } from "@/types/incident";
 import { SeverityBadge } from "./SeverityBadge";
+import { ClassificationChip } from "./ClassificationChip";
 
 const GLOW: Record<Incident["severity"], string> = {
   critical: "hover:shadow-glow-critical",
@@ -27,10 +28,16 @@ export function IncidentCard({ incident }: { incident: Incident }) {
 
       <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
         <span className="rounded bg-base-800 px-2 py-0.5 font-mono">
-          {CATEGORY_LABELS[incident.category]} · {incident.subType}
+          {CATEGORY_LABELS[incident.category]} · {formatSubType(incident.subType)}
         </span>
         <span className="capitalize">{incident.status}</span>
       </div>
+
+      {incident.classification && (
+        <div className="mt-2">
+          <ClassificationChip classification={incident.classification} />
+        </div>
+      )}
     </Link>
   );
 }

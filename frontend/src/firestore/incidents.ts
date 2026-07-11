@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { collection, doc, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Incident } from "@/types/incident";
 
@@ -25,4 +25,31 @@ export function useIncidents() {
   }, []);
 
   return { incidents, loading, error };
+}
+
+export function useIncident(id: string | undefined) {
+  const [incident, setIncident] = useState<Incident | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    const unsubscribe = onSnapshot(
+      doc(db, "incidents", id),
+      (snapshot) => {
+        setIncident(snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Incident) : null);
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      },
+    );
+    return unsubscribe;
+  }, [id]);
+
+  return { incident, loading, error };
 }

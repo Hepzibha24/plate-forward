@@ -23,6 +23,14 @@ export type Severity = "critical" | "warning" | "info" | "healthy";
 
 export type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved";
 
+export type ClassificationMethod = "rule" | "llm" | "rule-fallback";
+
+export interface IncidentClassification {
+  method: ClassificationMethod;
+  confidence: number;
+  reasoning?: string;
+}
+
 export interface Incident {
   id: string;
   category: CategoryId;
@@ -32,6 +40,13 @@ export interface Incident {
   severity: Severity;
   status: IncidentStatus;
   alertIds: string[];
+  classification?: IncidentClassification;
   createdAt: number;
   updatedAt: number;
+}
+
+/** Formats a taxonomy subtype id like "payment_success_rate_drop" as "Payment success rate drop". */
+export function formatSubType(subTypeId: string): string {
+  const words = subTypeId.split("_").join(" ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
