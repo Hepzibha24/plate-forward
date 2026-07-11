@@ -10,7 +10,11 @@ import { ingestAlert } from "./pipeline/orchestrator.js";
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors(allowedOrigins ? { origin: allowedOrigins } : undefined));
 app.use(express.json());
 
 app.use(healthRouter);

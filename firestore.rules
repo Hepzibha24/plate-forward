@@ -20,7 +20,12 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      // A user may create their own profile, but only as "viewer" — self-promotion
+      // to responder/admin is blocked. Only an existing admin can change roles
+      // (including granting the very first admin, done once via the Firebase
+      // console or Admin SDK — see README).
+      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.role == "viewer";
+      allow update, delete: if isAdmin();
     }
 
     match /incidents/{incidentId} {

@@ -5,6 +5,7 @@ import { LiveFeedPage } from "@/pages/LiveFeedPage";
 import { IncidentDetailPage } from "@/pages/IncidentDetailPage";
 import { CategoryOverviewPage } from "@/pages/CategoryOverviewPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

@@ -5,7 +5,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 
 export type Role = "viewer" | "responder" | "admin";
@@ -30,8 +30,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(firebaseUser);
       if (firebaseUser) {
         try {
-          const profileSnap = await getDoc(doc(db, "users", firebaseUser.uid));
-          setRole((profileSnap.data()?.role as Role) ?? "viewer");
+          const profileRef = doc(db, "users", firebaseUser.uid);
+          const profileSnap = await getDoc(profileRef);
+          if (profileSnap.exists()) {
+            setRole((profileSnap.data().role as Role) ?? "viewer");
+          } else {
+            // First sign-in: self-provision a viewer profile. Rules only allow
+            // creating one's own doc with role "viewer" — promotion requires an admin.
+            await setDoc(profileRef, { email: firebaseUser.email, role: "viewer" });
+            setRole("viewer");
+          }
         } catch {
           setRole("viewer");
         }
