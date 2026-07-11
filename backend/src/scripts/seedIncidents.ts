@@ -9,7 +9,9 @@ interface SeedIncident {
   summary: string;
   severity: "critical" | "warning" | "info" | "healthy";
   status: "investigating" | "identified" | "monitoring" | "resolved";
+  service: string;
   alertIds: string[];
+  alertNames: string[];
   createdAt: number;
   updatedAt: number;
 }
@@ -27,7 +29,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "Success rate for card payments in the EU region fell from 98.4% to 86.1% over 8 minutes, concentrated on Visa transactions routed through psp-adyen.",
     severity: "critical",
     status: "investigating",
+    service: "payment-service",
     alertIds: ["ALT-4001", "ALT-4002", "ALT-4003"],
+    alertNames: ["PaymentSuccessRateDrop", "PaymentSuccessRateDrop", "AuthorizationFailureSpike"],
     createdAt: now - minutes(6),
     updatedAt: now - minutes(1),
   },
@@ -40,7 +44,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "p95 response time from the Adyen authorization endpoint climbed to 4.2s, well above the 800ms baseline, correlated with INC-1001.",
     severity: "critical",
     status: "identified",
+    service: "payment-service",
     alertIds: ["ALT-4004", "ALT-4005"],
+    alertNames: ["PSPTimeout", "PSPTimeout"],
     createdAt: now - minutes(7),
     updatedAt: now - minutes(2),
   },
@@ -53,7 +59,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "Connection pool utilization hit 100% on payments-primary-db for ~4 minutes, causing query queuing across the payment-service.",
     severity: "warning",
     status: "monitoring",
+    service: "payments-primary-db",
     alertIds: ["ALT-3987"],
+    alertNames: ["ConnectionPoolExhausted"],
     createdAt: now - minutes(42),
     updatedAt: now - minutes(20),
   },
@@ -66,7 +74,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "Consumer group settlement-writer is lagging by ~48k messages, growing at ~600 msgs/min, on the settlement-events topic.",
     severity: "warning",
     status: "investigating",
+    service: "settlement-worker",
     alertIds: ["ALT-4010", "ALT-4011"],
+    alertNames: ["KafkaConsumerLag", "KafkaConsumerLag"],
     createdAt: now - minutes(15),
     updatedAt: now - minutes(3),
   },
@@ -79,7 +89,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "refund-service p99 latency exceeded 12s during the 02:00 batch refund job, triggering downstream timeouts in merchant-service.",
     severity: "info",
     status: "resolved",
+    service: "refund-service",
     alertIds: ["ALT-3820"],
+    alertNames: ["RefundServiceTimeout"],
     createdAt: now - minutes(300),
     updatedAt: now - minutes(240),
   },
@@ -92,7 +104,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "18% of requests from merchant acme-retail are hitting the deprecated /v1/payments endpoint, scheduled for sunset next month.",
     severity: "info",
     status: "monitoring",
+    service: "merchant-service",
     alertIds: ["ALT-4020"],
+    alertNames: ["MerchantInvalidRequests"],
     createdAt: now - minutes(90),
     updatedAt: now - minutes(60),
   },
@@ -105,7 +119,9 @@ const MOCK_INCIDENTS: SeedIncident[] = [
       "Average CPU utilization across payment-service pods in us-east-1 has held above 92% for 10 minutes, close to autoscaler ceiling.",
     severity: "healthy",
     status: "resolved",
+    service: "payment-service",
     alertIds: ["ALT-3750", "ALT-3751"],
+    alertNames: ["HighCPUUtilization", "HighCPUUtilization"],
     createdAt: now - minutes(600),
     updatedAt: now - minutes(560),
   },

@@ -1,6 +1,12 @@
 import { GitCommit } from "lucide-react";
 import { useEvidence } from "@/firestore/evidence";
-import { GrafanaEvidenceResult, PrometheusEvidenceResult } from "@/types/evidence";
+import {
+  GrafanaAnnotation,
+  GrafanaEvidenceResult,
+  GrafanaPanelSnapshot,
+  MetricResult,
+  PrometheusEvidenceResult,
+} from "@/types/evidence";
 import { MetricEvidenceCard } from "./MetricEvidenceCard";
 
 function isPrometheusResult(result: unknown): result is PrometheusEvidenceResult {
@@ -15,6 +21,13 @@ function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+/** Dedupe by key, keeping the last (freshest) occurrence — evidence arrives sorted oldest-first. */
+function dedupeBy<T>(items: T[], keyOf: (item: T) => string): T[] {
+  const map = new Map<string, T>();
+  for (const item of items) map.set(keyOf(item), item);
+  return [...map.values()];
+}
+
 export function EvidenceTimeline({ incidentId }: { incidentId: string }) {
   const { evidence, loading, error } = useEvidence(incidentId);
 
@@ -22,12 +35,22 @@ export function EvidenceTimeline({ incidentId }: { incidentId: string }) {
   if (error) return <p className="text-sm text-severity-critical">Failed to load evidence: {error}</p>;
   if (evidence.length === 0) return <p className="text-sm text-slate-500">No evidence collected yet.</p>;
 
-  const prometheusDoc = evidence.find((e) => e.source === "prometheus" && isPrometheusResult(e.result));
-  const grafanaDoc = evidence.find((e) => e.source === "grafana" && isGrafanaResult(e.result));
+  // A correlated incident can accumulate evidence from more than one alert/service —
+  // aggregate across every evidence doc rather than showing only the first.
+  const metrics: MetricResult[] = dedupeBy(
+    evidence.filter((e) => e.source === "prometheus" && isPrometheusResult(e.result)).flatMap((e) => (e.result as PrometheusEvidenceResult).metrics),
+    (m) => m.metricName,
+  );
 
-  const metrics =
-    prometheusDoc && isPrometheusResult(prometheusDoc.result) ? prometheusDoc.result.metrics : [];
-  const grafanaResult = grafanaDoc && isGrafanaResult(grafanaDoc.result) ? grafanaDoc.result : null;
+  const grafanaDocs = evidence.filter((e) => e.source === "grafana" && isGrafanaResult(e.result));
+  const annotations: GrafanaAnnotation[] = dedupeBy(
+    grafanaDocs.flatMap((e) => (e.result as GrafanaEvidenceResult).annotations),
+    (a) => a.id,
+  );
+  const panels: GrafanaPanelSnapshot[] = dedupeBy(
+    grafanaDocs.flatMap((e) => (e.result as GrafanaEvidenceResult).panels),
+    (p) => `${p.dashboardTitle}::${p.panelTitle}`,
+  );
 
   return (
     <div className="space-y-4">
@@ -39,11 +62,11 @@ export function EvidenceTimeline({ incidentId }: { incidentId: string }) {
         </div>
       )}
 
-      {grafanaResult && grafanaResult.annotations.length > 0 && (
+      {annotations.length > 0 && (
         <div>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Annotations</h3>
           <ul className="space-y-1.5">
-            {grafanaResult.annotations.map((a) => (
+            {annotations.map((a) => (
               <li key={a.id} className="flex items-center gap-2 text-xs text-slate-400">
                 <GitCommit className="h-3.5 w-3.5 text-accent-cyan" />
                 <span>{a.text}</span>
@@ -54,15 +77,15 @@ export function EvidenceTimeline({ incidentId }: { incidentId: string }) {
         </div>
       )}
 
-      {grafanaResult && grafanaResult.panels.length > 0 && (
+      {panels.length > 0 && (
         <div>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Dashboard Panels
           </h3>
           <ul className="space-y-1.5">
-            {grafanaResult.panels.map((panel) => (
+            {panels.map((panel) => (
               <li
-                key={panel.panelTitle}
+                key={`${panel.dashboardTitle}::${panel.panelTitle}`}
                 className="rounded border border-panel-border bg-base-800/40 px-3 py-2"
               >
                 <p className="text-xs text-slate-300">{panel.panelTitle}</p>

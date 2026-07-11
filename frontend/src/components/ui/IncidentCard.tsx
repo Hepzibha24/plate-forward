@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Link2 } from "lucide-react";
 import { CATEGORY_LABELS, formatSubType, Incident } from "@/types/incident";
 import { SeverityBadge } from "./SeverityBadge";
 import { ClassificationChip } from "./ClassificationChip";
@@ -33,9 +34,15 @@ export function IncidentCard({ incident }: { incident: Incident }) {
         <span className="capitalize">{incident.status}</span>
       </div>
 
-      {incident.classification && (
-        <div className="mt-2">
-          <ClassificationChip classification={incident.classification} />
+      {(incident.classification || incident.alertIds.length > 1) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {incident.classification && <ClassificationChip classification={incident.classification} />}
+          {incident.alertIds.length > 1 && (
+            <span className="mono inline-flex items-center gap-1.5 rounded border border-panel-border bg-base-800 px-2 py-0.5 text-[11px] text-slate-400">
+              <Link2 className="h-3 w-3" />
+              {incident.alertIds.length} alerts grouped
+            </span>
+          )}
         </div>
       )}
     </Link>

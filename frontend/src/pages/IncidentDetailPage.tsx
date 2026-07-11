@@ -5,6 +5,7 @@ import { SeverityBadge } from "@/components/ui/SeverityBadge";
 import { ClassificationChip } from "@/components/ui/ClassificationChip";
 import { CATEGORY_LABELS, formatSubType } from "@/types/incident";
 import { EvidenceTimeline } from "@/components/evidence/EvidenceTimeline";
+import { CorrelationPanel } from "@/components/correlation/CorrelationPanel";
 
 export function IncidentDetailPage() {
   const { id } = useParams();
@@ -56,10 +57,14 @@ export function IncidentDetailPage() {
           )}
         </div>
         <div className="panel p-6">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
             Correlation
           </h2>
-          <p className="text-sm text-slate-500">Coming in Phase 4.</p>
+          {incident ? (
+            <CorrelationPanel incidentId={incident.id} />
+          ) : (
+            <p className="text-sm text-slate-500">Waiting on incident data…</p>
+          )}
         </div>
         <div className="panel p-6">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">

@@ -18,7 +18,9 @@ export interface Incident {
   summary: string;
   severity: Severity;
   status: IncidentStatus;
+  service: string;
   alertIds: string[];
+  alertNames: string[];
   classification: IncidentClassification;
   createdAt: number;
   updatedAt: number;
