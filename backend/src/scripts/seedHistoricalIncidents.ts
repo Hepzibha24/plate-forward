@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { adminDb } from "../services/firebaseAdmin.js";
-import { embedText } from "../pipeline/historical/embeddings/hashEmbedding.js";
+import { getEmbeddingProvider } from "../pipeline/historical/embeddings/providers.js";
 
 interface SeedHistoricalIncident {
   id: string;
@@ -152,10 +152,15 @@ const HISTORICAL_INCIDENTS: SeedHistoricalIncident[] = [
 ];
 
 async function seed() {
+  // Uses whichever EMBEDDING_ADAPTER is configured — the embeddings stored here must
+  // come from the same provider queries will later use, or cosine similarity is comparing
+  // vectors from two different embedding spaces. Re-run this after switching adapters.
+  const provider = getEmbeddingProvider();
+
   const batch = adminDb.batch();
   for (const incident of HISTORICAL_INCIDENTS) {
     const ref = adminDb.collection("historical_incidents").doc(incident.id);
-    const embedding = embedText(`${incident.title}. ${incident.summary}`);
+    const embedding = await provider.embed(`${incident.title}. ${incident.summary}`);
     batch.set(ref, { ...incident, embedding });
   }
   await batch.commit();
