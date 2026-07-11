@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function role() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isResponderOrAdmin() {
+      return isSignedIn() && role() in ["responder", "admin"];
+    }
+
+    function isAdmin() {
+      return isSignedIn() && role() == "admin";
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      // A user may create their own profile, but only as "viewer" — self-promotion
+      // to responder/admin is blocked. Only an existing admin can change roles
+      // (including granting the very first admin, done once via the Firebase
+      // console or Admin SDK — see README).
+      allow create: if isSignedIn() && request.auth.uid == userId && request.resource.data.role == "viewer";
+      allow update, delete: if isAdmin();
+    }
+
+    match /incidents/{incidentId} {
+      allow read: if isSignedIn();
+      allow write: if isResponderOrAdmin();
+    }
+
+    match /alerts/{alertId} {
+      allow read: if isSignedIn();
+      allow write: if false; // written only by the backend via Admin SDK
+    }
+
+    match /evidence/{evidenceId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /correlations/{correlationId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /historical_incidents/{incidentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /rca_results/{rcaId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}
