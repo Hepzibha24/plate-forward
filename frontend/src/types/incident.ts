@@ -31,6 +31,15 @@ export interface IncidentClassification {
   reasoning?: string;
 }
 
+export interface HistoricalMatch {
+  historicalId: string;
+  title: string;
+  category: CategoryId;
+  resolutionSummary: string;
+  outcome: string;
+  similarity: number;
+}
+
 export interface Incident {
   id: string;
   category: CategoryId;
@@ -43,6 +52,7 @@ export interface Incident {
   alertIds: string[];
   alertNames?: string[];
   classification?: IncidentClassification;
+  historicalMatches?: HistoricalMatch[];
   createdAt: number;
   updatedAt: number;
 }

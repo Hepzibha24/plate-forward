@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx src/scripts/seedIncidents.ts"
+    "seed": "tsx src/scripts/seedIncidents.ts",
+    "seed:historical": "tsx src/scripts/seedHistoricalIncidents.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0",

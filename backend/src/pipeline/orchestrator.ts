@@ -12,6 +12,7 @@ import { collectEvidence } from "./evidence/collectEvidence.js";
 import { decideCorrelation } from "./correlation/decideCorrelation.js";
 import { fetchRecentIncidents } from "./correlation/fetchRecentIncidents.js";
 import { CorrelationDecision } from "./correlation/types.js";
+import { retrieveHistoricalMatches } from "./historical/retrieveHistorical.js";
 
 function newIncidentId(): string {
   return `INC-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 4).toUpperCase()}`;
@@ -94,8 +95,23 @@ async function createIncident(alert: Alert, decision: CorrelationDecision): Prom
 
   await recordCorrelation(incident.id, alert.id, decision);
   await gatherAndPersistEvidence(incident, alert);
+  await attachHistoricalMatches(incident);
 
   return incident;
+}
+
+async function attachHistoricalMatches(incident: Incident) {
+  try {
+    const matches = await retrieveHistoricalMatches(`${incident.title}. ${incident.summary}`);
+    if (matches.length === 0) return;
+    await adminDb.collection("incidents").doc(incident.id).update({ historicalMatches: matches });
+    logStage("historical", "historical matches attached", { incidentId: incident.id, count: matches.length });
+  } catch (err) {
+    console.error("[historical] retrieval failed, incident will show no historical matches", {
+      incidentId: incident.id,
+      err,
+    });
+  }
 }
 
 async function foldAlertIntoIncident(incidentId: string, alert: Alert, escalate: boolean) {
