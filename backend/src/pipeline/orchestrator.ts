@@ -13,6 +13,7 @@ import { decideCorrelation } from "./correlation/decideCorrelation.js";
 import { fetchRecentIncidents } from "./correlation/fetchRecentIncidents.js";
 import { CorrelationDecision } from "./correlation/types.js";
 import { retrieveHistoricalMatches } from "./historical/retrieveHistorical.js";
+import { runRCA } from "./rca/runRCA.js";
 
 function newIncidentId(): string {
   return `INC-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 4).toUpperCase()}`;
@@ -96,8 +97,17 @@ async function createIncident(alert: Alert, decision: CorrelationDecision): Prom
   await recordCorrelation(incident.id, alert.id, decision);
   await gatherAndPersistEvidence(incident, alert);
   await attachHistoricalMatches(incident);
+  await runInitialRCA(incident.id);
 
   return incident;
+}
+
+async function runInitialRCA(incidentId: string) {
+  try {
+    await runRCA(incidentId);
+  } catch (err) {
+    console.error("[rca] initial RCA generation failed, incident will show no RCA", { incidentId, err });
+  }
 }
 
 async function attachHistoricalMatches(incident: Incident) {

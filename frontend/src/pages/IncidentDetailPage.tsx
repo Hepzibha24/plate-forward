@@ -7,6 +7,7 @@ import { CATEGORY_LABELS, formatSubType } from "@/types/incident";
 import { EvidenceTimeline } from "@/components/evidence/EvidenceTimeline";
 import { CorrelationPanel } from "@/components/correlation/CorrelationPanel";
 import { HistoricalMatchCard } from "@/components/historical/HistoricalMatchCard";
+import { RCAPanel } from "@/components/rca/RCAPanel";
 
 export function IncidentDetailPage() {
   const { id } = useParams();
@@ -84,10 +85,14 @@ export function IncidentDetailPage() {
           )}
         </div>
         <div className="panel p-6 lg:col-span-2">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
             Root Cause &amp; Recommendation
           </h2>
-          <p className="text-sm text-slate-500">Coming in Phase 6.</p>
+          {incident ? (
+            <RCAPanel incidentId={incident.id} />
+          ) : (
+            <p className="text-sm text-slate-500">Waiting on incident data…</p>
+          )}
         </div>
       </div>
     </AppShell>

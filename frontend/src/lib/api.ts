@@ -23,3 +23,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
 export function generateMockAlerts(count = 1) {
   return apiFetch(`/api/mock/generate?count=${count}`, { method: "POST" });
 }
+
+export function rerunRCA(incidentId: string) {
+  return apiFetch(`/api/incidents/${incidentId}/rerun-rca`, { method: "POST" });
+}
